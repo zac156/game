@@ -2,7 +2,7 @@
 defmodule Round do
 
     defstruct [
-        :map, :char_row, :char_col
+        :map, :char_row, :char_col, :max_row, :max_col
     ]
 
     def build_map(row, col) do
@@ -16,10 +16,22 @@ defmodule Round do
         round = %Round{
           map: build_map(rows, cols),
           char_row: char_row,
-          char_col: char_col
+          char_col: char_col,
+          max_row: rows,
+          max_col: cols,
         }
-        round = place_at(round, char_row, char_col, '@')
+
         round
+        |> place_at(char_row, char_col, '@')
+    end
+
+    def possible_move?(%Round{char_row: char_row, char_col: char_col, max_row: max_row, max_col: max_col}, direction) do
+        case direction do
+            :down -> char_row + 1 < max_row
+            :up -> char_row - 1 >= 0
+            :left -> char_col - 1 >= 0
+            :right -> char_col + 1 < max_col
+        end
     end
 
     def move(%Round{char_row: char_row, char_col: char_col} = round, :down) do
@@ -61,6 +73,7 @@ defmodule Game do
     @col 3
 
     def print_map(%Round{map: map} = _round) do
+        IEx.Helpers.clear
         map |> Enum.map(fn n -> IO.inspect(n) end)
     end
 
@@ -73,10 +86,15 @@ defmodule Game do
     def loop(round) do
         direction = get_input()
 
-        round = round |> Round.move(direction)
+        round =
+            with true <- Round.possible_move?(round, direction)
+            do
+                round |> Round.move(direction)
+            else
+                false -> round
+            end
 
         print_map(round)
-
         loop(round)
     end
 
