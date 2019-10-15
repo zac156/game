@@ -13,9 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install Dependencies
+      working-directory: ./game
       run: |
         mix local.rebar --force
         mix local.hex --force
         mix deps.get
     - name: Run Tests
+      working-directory: ./game
       run: mix test
