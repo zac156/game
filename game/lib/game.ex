@@ -5,26 +5,54 @@ defmodule Game do
   @rows 3
   @cols 3
 
-  def print_map(%Round{map: map, enemy_count: enemy_count}) do
-    IEx.Helpers.clear()
+  def draw(%Round{map: map, enemy_count: enemy_count}) do
+    map
+    |> Enum.with_index()
+    |> Enum.each(fn {row, n} ->
+      ExNcurses.mvprintw(n, 0, "#{inspect(row)}")
+    end)
 
-    map |> Enum.map(fn n -> IO.inspect(n) end)
-    IO.puts("Enemy count: " <> Integer.to_string(enemy_count))
+    ExNcurses.mvprintw(@cols + 1, 0, "Enemy count: " <> Integer.to_string(enemy_count))
+    ExNcurses.refresh()
   end
 
   def start do
+    ExNcurses.n_begin()
+
+    ExNcurses.listen()
+    ExNcurses.noecho()
+    ExNcurses.keypad()
+    ExNcurses.curs_set(0)
+
     round = Round.start(@rows, @cols)
-    print_map(round)
     loop(round)
   end
 
   def loop(%Round{enemy_count: enemy_count}) when enemy_count == 0 do
-    IEx.Helpers.clear()
-    IO.puts("You have won")
+    ExNcurses.clear()
+    ExNcurses.mvprintw(0, 0, "You have won!")
+    ExNcurses.refresh()
+
+    # Continue playing
+    # round = Round.start(@rows, @cols)
+    # loop(round)
   end
 
   def loop(round) do
-    direction = get_input()
+    draw(round)
+
+    char = ExNcurses.getch()
+    ExNcurses.mvprintw(10, 0, "You entered '#{char}'  ")
+
+    if char == 113, do: ExNcurses.endwin()
+
+    direction =
+      case char do
+        259 -> :up
+        258 -> :down
+        260 -> :left
+        261 -> :right
+      end
 
     # Movement and collision detection
     round =
@@ -33,7 +61,7 @@ defmodule Game do
         false -> round
       end
 
-    print_map(round)
+    ExNcurses.refresh()
     loop(round)
   end
 
